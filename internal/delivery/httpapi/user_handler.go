@@ -7,11 +7,11 @@ import (
 
 	"github.com/giicoo/go-auth-service/internal/entity"
 	"github.com/giicoo/go-auth-service/internal/entity/models"
+	"github.com/giicoo/go-auth-service/pkg/apiError"
 	"github.com/sirupsen/logrus"
 )
 
 func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
-
 	body := r.Body
 	defer body.Close()
 
@@ -22,7 +22,7 @@ func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 				"url": r.URL.String(),
 			},
 		).Errorf("decode json: %s", err)
-		httpError(w, fmt.Errorf("decode json: %s", err), http.StatusBadRequest)
+		httpError(w, fmt.Errorf("decode json: %w", apiError.New(err.Error(), http.StatusBadRequest)))
 		return
 	}
 
@@ -39,7 +39,7 @@ func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 				"request": userJSON,
 			},
 		).Errorf("service create user: %s", err)
-		httpError(w, fmt.Errorf("service create user: %s", err), http.StatusInternalServerError)
+		httpError(w, fmt.Errorf("service create user: %w", err))
 		return
 	}
 
@@ -55,7 +55,7 @@ func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 				"request": userJSON,
 			},
 		).Errorf("send response: %s", err)
-		httpError(w, fmt.Errorf("send response: %s", err), http.StatusInternalServerError)
+		httpError(w, fmt.Errorf("send response: %w", err))
 		return
 	}
 }

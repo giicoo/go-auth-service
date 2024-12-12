@@ -2,10 +2,11 @@ package httpapi
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 
-	"github.com/giicoo/go-auth-service/internal/entity"
 	"github.com/giicoo/go-auth-service/internal/services"
+	"github.com/giicoo/go-auth-service/pkg/apiError"
 )
 
 type Handler struct {
@@ -18,15 +19,14 @@ func NewHandler(services *services.Services) *Handler {
 	}
 }
 
-func httpError(w http.ResponseWriter, err error, code int) {
-	switch err.(type) {
-	case entity.PublicError:
-		http.Error(w, err.Error(), code)
-	case entity.PrivateError:
-		http.Error(w, entity.ErrInternal.Error(), code)
-	default:
-		http.Error(w, entity.ErrInternal.Error(), code)
+func httpError(w http.ResponseWriter, err error) {
+	var apiErr apiError.APIError
+	if errors.As(err, &apiErr) {
+		http.Error(w, err.Error(), apiErr.Code())
+	} else {
+		http.Error(w, apiError.ErrInternal.Error(), apiError.ErrInternal.Code())
 	}
+
 }
 
 func httpResponse(w http.ResponseWriter, r interface{}) error {

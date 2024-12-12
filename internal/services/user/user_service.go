@@ -8,6 +8,7 @@ import (
 	"github.com/giicoo/go-auth-service/internal/config"
 	"github.com/giicoo/go-auth-service/internal/entity"
 	"github.com/giicoo/go-auth-service/internal/repository"
+	"github.com/giicoo/go-auth-service/pkg/apiError"
 	hashTools "github.com/giicoo/go-auth-service/pkg/hash"
 )
 
@@ -30,7 +31,7 @@ func (s *UserService) CreateUser(user *entity.User) (*entity.User, error) {
 		return nil, fmt.Errorf("check exist user: %w", err)
 	}
 	if userYet != nil {
-		return nil, fmt.Errorf("user`s email %s: %w", userYet.Email, entity.ErrUserAlreadyExists)
+		return nil, fmt.Errorf("user`s email %s: %w", userYet.Email, apiError.ErrUserAlreadyExists)
 	}
 
 	hashPassword, err := hashTools.HashPassword(user.Password)
@@ -45,3 +46,25 @@ func (s *UserService) CreateUser(user *entity.User) (*entity.User, error) {
 	}
 	return userDB, nil
 }
+
+// func (s *UserService) DeleteUser(user *entity.User) error {
+// 	userYet, err := s.repo.GetUserByEmail(user.Email)
+// 	if !errors.Is(err, sql.ErrNoRows) && err != nil {
+// 		return fmt.Errorf("check exist user: %w", err)
+// 	}
+// 	if userYet == nil {
+// 		return fmt.Errorf("user`s email %s: %w", userYet.Email, entity.ErrUserAlreadyExists)
+// 	}
+
+// 	hashPassword, err := hashTools.HashPassword(user.Password)
+// 	if err != nil {
+// 		return nil, fmt.Errorf("hash password: %w", err)
+// 	}
+// 	user.Password = hashPassword
+
+// 	userDB, err := s.repo.CreateUser(user)
+// 	if err != nil {
+// 		return nil, fmt.Errorf("create user: %w", err)
+// 	}
+// 	return userDB, nil
+// }

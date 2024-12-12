@@ -69,3 +69,13 @@ func (r *Repo) GetUserByEmail(email string) (*entity.User, error) {
 
 	return userDB, nil
 }
+
+func (r *Repo) DeleteUser(id int) error {
+	stmt := "DELETE FROM users WHERE id=?"
+
+	_, err := r.db.Exec(stmt, id)
+	if err != nil {
+		return fmt.Errorf("delete user %d id: %w", id, err)
+	}
+	return nil
+}

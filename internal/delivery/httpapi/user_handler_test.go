@@ -8,6 +8,7 @@ import (
 	"github.com/giicoo/go-auth-service/internal/entity"
 	"github.com/giicoo/go-auth-service/internal/services"
 	mock_services "github.com/giicoo/go-auth-service/internal/services/mocks"
+	"github.com/giicoo/go-auth-service/pkg/apiError"
 	"github.com/golang/mock/gomock"
 	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/assert"
@@ -51,16 +52,16 @@ func TestCreateUser(t *testing.T) {
 			expectedResponseBody: "decode json: invalid character '\"' after object key:value pair\n",
 		},
 		{
-			name:      "OK",
+			name:      "User already exist",
 			inputBody: `{"email":"da", "password":"123"}`,
 			inputUser: &entity.User{
 				Email:    "da",
 				Password: "123",
 			},
 			mockBehavior: func(r *mock_services.MockUserService, user *entity.User) {
-				r.EXPECT().CreateUser(user).Return(nil, entity.ErrUserAlreadyExists)
+				r.EXPECT().CreateUser(user).Return(nil, apiError.ErrUserAlreadyExists)
 			},
-			expectedStatusCode:   500,
+			expectedStatusCode:   400,
 			expectedResponseBody: "service create user: user already exist\n",
 		},
 	}
