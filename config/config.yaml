@@ -1,3 +1,6 @@
 server:
   host: "localhost"
   port: "8080"
+db:
+  path: "./internal/repository/sqlite/store.db"
+  path_to_sql: "./internal/repository/sql/"

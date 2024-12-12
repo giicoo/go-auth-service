@@ -11,6 +11,10 @@ type Config struct {
 		Host string `yaml:"host"`
 		Port string `yaml:"port"`
 	} `yaml:"server"`
+	DB struct {
+		Path      string `yaml:"path"`
+		PathToSQL string `yaml:"path_to_sql"`
+	} `yaml:"db"`
 }
 
 func LoadConfig(path string) (*Config, error) {

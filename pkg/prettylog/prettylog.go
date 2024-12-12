@@ -176,7 +176,7 @@ func (h *Handler) Handle(ctx context.Context, r slog.Record) error {
 
 	}
 
-	_, err = io.WriteString(h.writer, out.String())
+	_, err = io.WriteString(h.writer, out.String()+"\n")
 	if err != nil {
 		return err
 	}

@@ -2,9 +2,8 @@ package app
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
-	"log"
-	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
@@ -15,33 +14,49 @@ import (
 	"github.com/giicoo/go-auth-service/internal/repository/sqlite"
 	"github.com/giicoo/go-auth-service/internal/server"
 	"github.com/giicoo/go-auth-service/internal/services"
-	"github.com/giicoo/go-auth-service/pkg/prettylog"
+	"github.com/giicoo/go-auth-service/pkg/beauti_json_formatter"
+	_ "github.com/mattn/go-sqlite3"
+	"github.com/sirupsen/logrus"
 )
 
 func RunApp() {
-
 	// init logger
-	prettyHandler := prettylog.NewHandler(&slog.HandlerOptions{
-		Level:       slog.LevelInfo,
-		AddSource:   false,
-		ReplaceAttr: nil,
-	})
-	logger := slog.New(prettyHandler)
-	slog.SetDefault(logger)
+	formatter := beauti_json_formatter.NewFormatter(true)
+	logrus.SetFormatter(formatter)
+	logrus.SetOutput(os.Stdout)
+	logrus.SetLevel(logrus.DebugLevel)
 
 	// Load Config
 	cfg, err := config.LoadConfig("./config/config.yaml")
 	if err != nil {
-		slog.Error("", "err", err.Error())
+		logrus.Errorf("load config file: %s", err)
 		return
 	}
+	logrus.Info("Logger and Config init")
+
+	// Load DB
+	db, err := sql.Open("sqlite3", cfg.DB.Path)
+	if err != nil {
+		logrus.Errorf("open db: %s", err)
+		return
+	}
+	logrus.Info("DB connect")
+
 	// Init layers
-	repo := sqlite.NewRepo(cfg)
+	repo := sqlite.NewRepo(cfg, db)
 	services := services.NewServices(cfg, repo)
 	handler := httpapi.NewHandler(services)
 
+	// Init repo
+	if err := repo.InitRepo(); err != nil {
+		logrus.Errorf("init repo: %s", err)
+		return
+	}
+
+	// Create router
+	r := handler.NewRouter()
 	// Start Server
-	srv := server.NewServer(handler.Router)
+	srv := server.NewServer(r)
 
 	go func() {
 
@@ -49,24 +64,32 @@ func RunApp() {
 		if err != nil {
 			switch err {
 			case http.ErrServerClosed:
-				fmt.Println()
+
 			default:
-				log.Fatal(err)
+				logrus.Errorf("start server: %s", err)
+				return
 			}
 		}
 	}()
-	slog.Info("Server Start")
+	logrus.Info("Server Start")
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt)
 
 	<-stop
-
+	fmt.Println()
+	err = db.Close()
+	if err != nil {
+		logrus.Errorf("err with db close: %s", err)
+		return
+	}
+	logrus.Info("DB close")
 	// ShutDown Server
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	if err := srv.ShutdownServer(ctx); err != nil {
-		log.Fatal(err)
+		logrus.Errorf("shutdown server: %s", err)
+		return
 	} else {
-		log.Print("Server stop.")
+		logrus.Info("Server stop")
 	}
 }

@@ -2,7 +2,9 @@ package httpapi
 
 import "github.com/gorilla/mux"
 
-func NewRouter() *mux.Router {
+func (h *Handler) NewRouter() *mux.Router {
 	r := mux.NewRouter()
+
+	r.HandleFunc("/create-user", h.CreateUser).Methods("POST")
 	return r
 }
