@@ -2,6 +2,7 @@ package httpapi
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/giicoo/go-auth-service/internal/entity"
@@ -21,7 +22,7 @@ func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 				"url": r.URL.String(),
 			},
 		).Errorf("decode json: %s", err)
-		httpError(w, err, http.StatusBadRequest)
+		httpError(w, fmt.Errorf("decode json: %s", err), http.StatusBadRequest)
 		return
 	}
 
@@ -38,18 +39,23 @@ func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 				"request": userJSON,
 			},
 		).Errorf("service create user: %s", err)
-		httpError(w, err, http.StatusInternalServerError)
+		httpError(w, fmt.Errorf("service create user: %s", err), http.StatusInternalServerError)
 		return
 	}
 
-	if err := httpResponse(w, userDB); err != nil {
+	userResponse := models.UserResponse{
+		ID:    userDB.ID,
+		Email: userDB.Email,
+	}
+
+	if err := httpResponse(w, userResponse); err != nil {
 		logrus.WithFields(
 			logrus.Fields{
 				"url":     r.URL.String(),
 				"request": userJSON,
 			},
 		).Errorf("send response: %s", err)
-		httpError(w, err, http.StatusInternalServerError)
+		httpError(w, fmt.Errorf("send response: %s", err), http.StatusInternalServerError)
 		return
 	}
 }

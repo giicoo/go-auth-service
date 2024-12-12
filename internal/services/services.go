@@ -7,6 +7,7 @@ import (
 	"github.com/giicoo/go-auth-service/internal/services/user"
 )
 
+//go:generate mockgen -source=services.go -destination=mocks/mock.go
 type UserService interface {
 	CreateUser(*entity.User) (*entity.User, error)
 }
