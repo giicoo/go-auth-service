@@ -41,19 +41,13 @@ func (r *Repo) InitRepo() error {
 	return nil
 }
 
-func (r *Repo) CreateUser(user *entity.User) (*entity.User, error) {
+func (r *Repo) CreateUser(user *entity.User) error {
 	stmt := "INSERT INTO users (email, hash_password) VALUES (?, ?)"
 
 	if _, err := r.db.Exec(stmt, user.Email, user.Password); err != nil {
-		return nil, fmt.Errorf("db exec: %w", err)
+		return fmt.Errorf("db exec: %w", err)
 	}
-
-	userDB, err := r.GetUserByEmail(user.Email)
-	if err != nil {
-		return nil, fmt.Errorf("get user by %s: %w", user.Email, err)
-	}
-
-	return userDB, nil
+	return nil
 }
 
 func (r *Repo) GetUserByEmail(email string) (*entity.User, error) {
@@ -70,12 +64,35 @@ func (r *Repo) GetUserByEmail(email string) (*entity.User, error) {
 	return userDB, nil
 }
 
+func (r *Repo) GetUserByID(id int) (*entity.User, error) {
+	stmt := "SELECT * FROM users WHERE id=?"
+
+	userDB := new(entity.User)
+
+	row := r.db.QueryRow(stmt, id)
+	err := row.Scan(&userDB.ID, &userDB.Email, &userDB.Password)
+	if err != nil {
+		return nil, fmt.Errorf("row scan: %w", err)
+	}
+
+	return userDB, nil
+}
+
 func (r *Repo) DeleteUser(id int) error {
 	stmt := "DELETE FROM users WHERE id=?"
 
 	_, err := r.db.Exec(stmt, id)
 	if err != nil {
 		return fmt.Errorf("delete user %d id: %w", id, err)
+	}
+	return nil
+}
+
+func (r *Repo) UpdateUser(user *entity.User) error {
+	stmt := "UPDATE users SET email=?, hash_password=? WHERE id=?"
+	_, err := r.db.Exec(stmt, user.Email, user.Password, user.ID)
+	if err != nil {
+		return fmt.Errorf("update user %s email: %w", user.Email, err)
 	}
 	return nil
 }
