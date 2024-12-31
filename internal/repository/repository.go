@@ -1,6 +1,10 @@
 package repository
 
-import "github.com/giicoo/go-auth-service/internal/entity"
+import (
+	"context"
+
+	"github.com/giicoo/go-auth-service/internal/entity"
+)
 
 //go:generate mockgen -source=
 type Repo interface {
@@ -9,4 +13,12 @@ type Repo interface {
 	GetUserByID(id int) (*entity.User, error)
 	UpdateUser(*entity.User) error
 	DeleteUser(id int) error
+}
+
+type SessionRepo interface {
+	CreateSession(ctx context.Context, s *entity.Session) (string, error)
+	GetSession(ctx context.Context, id string, user_id int) (*entity.Session, error)
+	DeleteSession(ctx context.Context, id string, user_id int) error
+	GetListSession(ctx context.Context, user_id int) ([]*entity.Session, error)
+	DeleteListSession(ctx context.Context, user_id int) error
 }
