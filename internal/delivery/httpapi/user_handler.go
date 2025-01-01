@@ -94,7 +94,10 @@ func (h *Handler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := httpResponse(w, fmt.Sprintf("user with %s email success delete", user.Email)); err != nil {
+	response := models.Response{
+		Message: fmt.Sprintf("user with %s email success delete", user.Email),
+	}
+	if err := httpResponse(w, response); err != nil {
 		logrus.WithFields(
 			logrus.Fields{
 				"url":     r.URL.String(),

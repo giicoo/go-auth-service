@@ -64,21 +64,20 @@ func GenerateRandomSessionID() (string, error) {
 	return base64.URLEncoding.EncodeToString(b), nil
 }
 
-func (r *SessionRepo) CreateSession(ctx context.Context, s *entity.Session) (string, error) {
+func (r *SessionRepo) CreateSession(ctx context.Context, s *entity.Session) (*entity.Session, error) {
 	id, err := GenerateRandomSessionID()
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	s.ID = id
-
 	key := fmt.Sprintf("%s:%d:%s", SessionPrefix, s.UserID, s.ID)
+
 	err = r.rdb.HSet(ctx, key, s).Err()
 	if err != nil {
-		return "", err
+		return nil, fmt.Errorf("redis create session: %w", err)
 	}
-
-	return id, nil
+	return s, nil
 }
 
 func (r *SessionRepo) GetSession(ctx context.Context, id string, user_id int) (*entity.Session, error) {

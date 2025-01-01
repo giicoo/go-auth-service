@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/giicoo/go-auth-service/internal/entity/models"
 	"github.com/giicoo/go-auth-service/internal/services"
 	"github.com/giicoo/go-auth-service/pkg/apiError"
 )
@@ -20,11 +21,27 @@ func NewHandler(services *services.Services) *Handler {
 }
 
 func httpError(w http.ResponseWriter, err error) {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.Header().Set("X-Content-Type-Options", "nosniff")
 	var apiErr apiError.APIError
 	if errors.As(err, &apiErr) {
-		http.Error(w, err.Error(), apiErr.Code())
+		response := models.ErrorResponse{
+			Error: err.Error(),
+		}
+		w.WriteHeader(apiErr.Code())
+		if err := json.NewEncoder(w).Encode(response); err != nil {
+			http.Error(w, apiError.ErrInternal.Error(), apiError.ErrInternal.Code())
+		}
+
 	} else {
-		http.Error(w, apiError.ErrInternal.Error(), apiError.ErrInternal.Code())
+		response := models.ErrorResponse{
+			Error: apiError.ErrInternal.Error(),
+		}
+		w.WriteHeader(apiError.ErrInternal.Code())
+		if err := json.NewEncoder(w).Encode(response); err != nil {
+			http.Error(w, apiError.ErrInternal.Error(), apiError.ErrInternal.Code())
+		}
+
 	}
 
 }

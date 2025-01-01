@@ -1,20 +1,19 @@
 package models
 
-type UserRequest struct {
+type UserCreateRequest struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
 }
-type UserCreateRequest struct {
-	UserRequest
-}
 
 type UserDeleteRequest struct {
-	UserRequest
+	Email    string `json:"email"`
+	Password string `json:"password"`
 }
 
 type UserUpdateRequest struct {
-	ID int `json:"id"`
-	UserRequest
+	ID       int    `json:"id"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
 }
 
 type UserGetByEmailRequest struct {

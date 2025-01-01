@@ -16,7 +16,7 @@ type Repo interface {
 }
 
 type SessionRepo interface {
-	CreateSession(ctx context.Context, s *entity.Session) (string, error)
+	CreateSession(ctx context.Context, s *entity.Session) (*entity.Session, error)
 	GetSession(ctx context.Context, id string, user_id int) (*entity.Session, error)
 	DeleteSession(ctx context.Context, id string, user_id int) error
 	GetListSession(ctx context.Context, user_id int) ([]*entity.Session, error)
