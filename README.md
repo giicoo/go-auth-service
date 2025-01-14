@@ -1,8 +1,28 @@
 # go-auth-service
+[![forthebadge](https://forthebadge.com/images/badges/made-with-go.svg)](https://forthebadge.com) [![forthebadge](http://forthebadge.com/images/badges/built-with-love.svg)](http://forthebadge.com)
+
 Сервис для ведения БД пользователей и контроля их сессий.
 Используются принципы чистой архитектуры.
 
 Доступ к сервису осуществляется только через запросы подписанные **JWT токеном** которые генерируется при запуске и сохраняется в ENV.
+
+# Запуск
+Скачать репозиторий:
+```
+git clone github.com/giicoo/go-auth-service
+```
+
+Собрать образ докера:
+```
+docker build -t auth:1.0 .
+```
+
+Запустить docker-compose:
+```
+docker-compose up --build
+```
+Swagger-docs:
+http://localhost:8080/swagger/index.html
 
 # ***Endpoints:***
 ## Users
@@ -52,7 +72,7 @@
 
 ```json
 {
-    "id":0,
+    	"id":0,
 	"new_email": "string"
 }
 ```
@@ -72,7 +92,7 @@
 *request:*
 ```json
 {
-    "id":0,
+    	"id":0,
 	"new_password": "string"
 }
 ```
@@ -137,7 +157,7 @@ id: integer
 *request:*
 ```json
 {
-	"user_id": int,
+	"user_id": 0,
 	"user_ip": "string",
 	"user_agent": "string"
 }
@@ -168,7 +188,7 @@ session_id: string
 ```json
 {
 	"session_id": "string",
-	"user_id": int,
+	"user_id": 0,
 	"user_ip": "string",
 	"user_agent": "string"
 }
@@ -193,7 +213,7 @@ user_id: int
 [
 	{
 		"session_id": "string",
-		"user_id": int,
+		"user_id": 0,
 		"user_ip": "string",
 		"user_agent": "string"
 	},
