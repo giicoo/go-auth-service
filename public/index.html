@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Registration & Login</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="script.js" defer></script>
+  </head>
+  <body
+    class="bg-gray-900 h-screen flex items-center justify-center text-gray-200"
+  >
+    <div id="app" class="w-full max-w-lg bg-gray-800 rounded-lg shadow-lg p-8">
+      <!-- Registration Form -->
+      <div id="registration-form" class="space-y-6 hidden">
+        <h2 class="text-3xl font-bold text-gray-100 text-center">Register</h2>
+        <form id="register-form">
+          <div class="mb-6">
+            <label for="email" class="block text-sm font-medium text-gray-400"
+              >Email</label
+            >
+            <input
+              type="email"
+              id="email"
+              name="email"
+              class="mt-2 block w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-md focus:ring-blue-500 focus:border-blue-500"
+              required
+            />
+          </div>
+          <div class="mb-6">
+            <label
+              for="password"
+              class="block text-sm font-medium text-gray-400"
+              >Password</label
+            >
+            <input
+              type="password"
+              id="password"
+              name="password"
+              class="mt-2 block w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-md focus:ring-blue-500 focus:border-blue-500"
+              required
+            />
+          </div>
+          <button
+            type="button"
+            onclick="toggleForms('login-form')"
+            class="w-full text-blue-400 hover:underline"
+          >
+            Already have an account? Log in
+          </button>
+          <button
+            type="submit"
+            class="w-full bg-blue-600 text-white py-3 rounded-md hover:bg-blue-700"
+          >
+            Register
+          </button>
+        </form>
+        <div
+          id="registration-error"
+          class="text-red-500 hidden text-center mt-4"
+        >
+          Registration failed. Please try again.
+        </div>
+      </div>
+
+      <!-- Login Form -->
+      <div id="login-form" class="space-y-6">
+        <h2 class="text-3xl font-bold text-gray-100 text-center">Log In</h2>
+        <form>
+          <div class="mb-6">
+            <label
+              for="login-email"
+              class="block text-sm font-medium text-gray-400"
+              >Email</label
+            >
+            <input
+              type="email"
+              id="login-email"
+              name="email"
+              class="mt-2 block w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-md focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
+          <div class="mb-6">
+            <label
+              for="login-password"
+              class="block text-sm font-medium text-gray-400"
+              >Password</label
+            >
+            <input
+              type="password"
+              id="login-password"
+              name="password"
+              class="mt-2 block w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-md focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
+          <button
+            type="button"
+            onclick="toggleForms('registration-form')"
+            class="w-full text-blue-400 hover:underline"
+          >
+            Don’t have an account? Register
+          </button>
+          <button
+            type="submit"
+            class="w-full bg-blue-600 text-white py-3 rounded-md hover:bg-blue-700"
+          >
+            Log In
+          </button>
+        </form>
+        <div
+        id="login-error"
+        class="text-red-500 hidden text-center mt-4"
+      >
+        Login failed. Please try again.
+      </div>
+      </div>
+
+      <!-- Sessions List -->
+      <div id="sessions" class="space-y-6 hidden">
+        <h2 class="text-3xl font-bold text-gray-100 text-center">Sessions</h2>
+        <ul class="space-y-4">
+          <li
+            class="flex items-center justify-between bg-gray-700 px-6 py-4 rounded-md"
+          >
+            <span>Session #1</span>
+            <button class="text-red-400 hover:underline">Log Out</button>
+          </li>
+          <li
+            class="flex items-center justify-between bg-gray-700 px-6 py-4 rounded-md"
+          >
+            <span>Session #2</span>
+            <button class="text-red-400 hover:underline">Log Out</button>
+          </li>
+        </ul>
+        <button
+          class="w-full bg-red-600 text-white py-3 rounded-md hover:bg-red-700"
+        >
+          Log Out of All Sessions
+        </button>
+      </div>
+    </div>
+  </body>
+</html>

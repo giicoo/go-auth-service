@@ -50,14 +50,28 @@ func (s *UserService) CreateUser(user *entity.User) (*entity.User, error) {
 	}
 	return userDB, nil
 }
-
-func (s *UserService) DeleteUser(user *entity.User) error {
-	userYet, err := s.repo.GetUserByEmail(user.Email)
-	if errors.Is(err, sql.ErrNoRows) {
-		return fmt.Errorf("get user by %s email: %w", user.Email, apiError.ErrUserNotExists)
+func (s *UserService) CheckUser(user *entity.User) (*entity.User, error) {
+	userDB, err := s.repo.GetUserByEmail(user.Email)
+	if errors.Is(err, sql.ErrNoRows) && err != nil {
+		return nil, fmt.Errorf("user email %s: %w", user.Email, apiError.ErrUserNotExists)
 	}
 	if err != nil {
-		return fmt.Errorf("get user by %s email: %w", user.Email, err)
+		return nil, fmt.Errorf("user check %s: %w", user.Email, err)
+	}
+
+	if !hashTools.CheckPasswordHash(user.Password, userDB.Password) {
+		return nil, fmt.Errorf("check user %s: %w", user.Email, apiError.ErrWrongPassword)
+	}
+
+	return userDB, nil
+}
+func (s *UserService) DeleteUser(id int) error {
+	userYet, err := s.repo.GetUserByID(id)
+	if errors.Is(err, sql.ErrNoRows) {
+		return fmt.Errorf("get user by %d id: %w", id, apiError.ErrUserNotExists)
+	}
+	if err != nil {
+		return fmt.Errorf("get user by %d id: %w", id, err)
 	}
 
 	if err := s.repo.DeleteUser(userYet.ID); err != nil {
@@ -66,7 +80,36 @@ func (s *UserService) DeleteUser(user *entity.User) error {
 	return nil
 }
 
-func (s *UserService) UpdateUser(user *entity.User) (*entity.User, error) {
+func (s *UserService) UpdateEmailUser(user *entity.User) (*entity.User, error) {
+	_, err := s.repo.GetUserByID(user.ID)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, fmt.Errorf("get user by %d id: %w", user.ID, apiError.ErrUserNotExists)
+	}
+	if err != nil {
+		return nil, fmt.Errorf("get user by %d id: %w", user.ID, err)
+	}
+
+	// check exist email
+	userYet, err := s.repo.GetUserByEmail(user.Email)
+	if !errors.Is(err, sql.ErrNoRows) && err != nil {
+		return nil, fmt.Errorf("check exist user: %w", err)
+	}
+	if userYet != nil {
+		return nil, fmt.Errorf("user`s email %s: %w", userYet.Email, apiError.ErrUserAlreadyExists)
+	}
+
+	if err := s.repo.UpdateEmailUser(user); err != nil {
+		return nil, fmt.Errorf("update user: %w", err)
+	}
+
+	userDB, err := s.repo.GetUserByID(user.ID)
+	if err != nil {
+		return nil, fmt.Errorf("get user by %s email: %w", user.Email, err)
+	}
+	return userDB, nil
+}
+
+func (s *UserService) UpdatePasswordUser(user *entity.User) (*entity.User, error) {
 	_, err := s.repo.GetUserByID(user.ID)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, fmt.Errorf("get user by %d id: %w", user.ID, apiError.ErrUserNotExists)
@@ -81,35 +124,35 @@ func (s *UserService) UpdateUser(user *entity.User) (*entity.User, error) {
 	}
 	user.Password = hashPassword
 
-	if err := s.repo.UpdateUser(user); err != nil {
+	if err := s.repo.UpdatePasswordUser(user); err != nil {
 		return nil, fmt.Errorf("update user: %w", err)
 	}
 
-	userDB, err := s.repo.GetUserByEmail(user.Email)
-	if err != nil {
-		return nil, fmt.Errorf("get user by %s email: %w", user.Email, err)
-	}
-	return userDB, nil
-}
-
-func (s *UserService) GetUserByEmail(user *entity.User) (*entity.User, error) {
-	userDB, err := s.repo.GetUserByEmail(user.Email)
-	if errors.Is(err, sql.ErrNoRows) {
-		return nil, fmt.Errorf("get user by %s email: %w", user.Email, apiError.ErrUserNotExists)
-	}
-	if err != nil {
-		return nil, fmt.Errorf("get user by %s email: %w", user.Email, err)
-	}
-	return userDB, nil
-}
-
-func (s *UserService) GetUserByID(user *entity.User) (*entity.User, error) {
 	userDB, err := s.repo.GetUserByID(user.ID)
+	if err != nil {
+		return nil, fmt.Errorf("get user by %s email: %w", user.Email, err)
+	}
+	return userDB, nil
+}
+
+// func (s *UserService) GetUserByEmail(user *entity.User) (*entity.User, error) {
+// 	userDB, err := s.repo.GetUserByEmail(user.Email)
+// 	if errors.Is(err, sql.ErrNoRows) {
+// 		return nil, fmt.Errorf("get user by %s email: %w", user.Email, apiError.ErrUserNotExists)
+// 	}
+// 	if err != nil {
+// 		return nil, fmt.Errorf("get user by %s email: %w", user.Email, err)
+// 	}
+// 	return userDB, nil
+// }
+
+func (s *UserService) GetUserByID(id int) (*entity.User, error) {
+	userDB, err := s.repo.GetUserByID(id)
 	if errors.Is(err, sql.ErrNoRows) {
-		return nil, fmt.Errorf("get user by %d id: %w", user.ID, apiError.ErrUserNotExists)
+		return nil, fmt.Errorf("get user by %d id: %w", id, apiError.ErrUserNotExists)
 	}
 	if err != nil {
-		return nil, fmt.Errorf("get user by %d id: %w", user.ID, err)
+		return nil, fmt.Errorf("get user by %d id: %w", id, err)
 	}
 	return userDB, nil
 }

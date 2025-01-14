@@ -5,22 +5,25 @@ type UserCreateRequest struct {
 	Password string `json:"password"`
 }
 
-type UserDeleteRequest struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
+type UserUpdateEmailRequest struct {
+	UserID int    `json:"id"`
+	Email  string `json:"new_email"`
 }
 
-type UserUpdateRequest struct {
-	ID       int    `json:"id"`
-	Email    string `json:"email"`
-	Password string `json:"password"`
+type UserUpdatePasswordRequest struct {
+	UserID   int    `json:"id"`
+	Password string `json:"new_password"`
 }
 
-type UserGetByEmailRequest struct {
-	Email string `json:"email"`
+type UserIdRequest struct {
+	UserID int `json:"id"`
+}
+type UserCheckRequest struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
 }
 
 type UserResponse struct {
-	ID    int    `json:"id"`
-	Email string `json:"email"`
+	UserID int    `json:"id"`
+	Email  string `json:"email"`
 }

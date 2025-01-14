@@ -88,9 +88,18 @@ func (r *Repo) DeleteUser(id int) error {
 	return nil
 }
 
-func (r *Repo) UpdateUser(user *entity.User) error {
-	stmt := "UPDATE users SET email=?, hash_password=? WHERE id=?"
-	_, err := r.db.Exec(stmt, user.Email, user.Password, user.ID)
+func (r *Repo) UpdateEmailUser(user *entity.User) error {
+	stmt := "UPDATE users SET email=? WHERE id=?"
+	_, err := r.db.Exec(stmt, user.Email, user.ID)
+	if err != nil {
+		return fmt.Errorf("update user %s email: %w", user.Email, err)
+	}
+	return nil
+}
+
+func (r *Repo) UpdatePasswordUser(user *entity.User) error {
+	stmt := "UPDATE users SET hash_password=? WHERE id=?"
+	_, err := r.db.Exec(stmt, user.Password, user.ID)
 	if err != nil {
 		return fmt.Errorf("update user %s email: %w", user.Email, err)
 	}

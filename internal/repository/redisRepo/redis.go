@@ -4,14 +4,18 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/base64"
+	"errors"
 	"fmt"
+	"time"
 
 	"github.com/giicoo/go-auth-service/internal/entity"
+	"github.com/giicoo/go-auth-service/pkg/apiError"
 	"github.com/redis/go-redis/v9"
 )
 
 var (
-	SessionPrefix = "session"
+	SessionPrefix      = "session"
+	UserSessionsPrefix = "user_sessions"
 )
 
 type SessionRepo struct {
@@ -26,35 +30,6 @@ func NewSessionRepo() *SessionRepo {
 	}
 }
 
-// func Check() {
-
-// 	ctx := context.Background()
-
-// 	s := NewSessionRepo()
-
-// id, err := s.CreateSession(ctx, &entity.Session{UserID: 3, UserAgent: "test", UserIP: "test1"})
-// fmt.Println(id, err)
-
-// res, err := s.GetSession(ctx, id, 3)
-// fmt.Println(res, err)
-
-// err = s.DeleteSession(ctx, id, 3)
-// fmt.Println(err)
-
-// id, err = s.CreateSession(ctx, &entity.Session{UserID: 1, UserAgent: "test", UserIP: "test1"})
-// fmt.Print(id, err)
-// id, err = s.CreateSession(ctx, &entity.Session{UserID: 1, UserAgent: "test2", UserIP: "test2"})
-// fmt.Print(id, err)
-
-// 	list, err := s.GetListSession(ctx, 1)
-// 	fmt.Println(list, err)
-
-// 	err = s.DeleteListSession(ctx, 3)
-// 	fmt.Println(err)
-
-//		list, err = s.GetListSession(ctx, 1)
-//		fmt.Println(list, err)
-//	}
 func GenerateRandomSessionID() (string, error) {
 	b := make([]byte, 32)
 	_, err := rand.Read(b)
@@ -71,53 +46,104 @@ func (r *SessionRepo) CreateSession(ctx context.Context, s *entity.Session) (*en
 	}
 
 	s.ID = id
-	key := fmt.Sprintf("%s:%d:%s", SessionPrefix, s.UserID, s.ID)
 
-	err = r.rdb.HSet(ctx, key, s).Err()
+	// create "session <session_id>{"user_id": int, "user_ip": "string", "user_agent": "string"}""
+	key_session := fmt.Sprintf("%s:%s", SessionPrefix, s.ID)
+	err = r.rdb.HSet(ctx, key_session, s).Err()
 	if err != nil {
 		return nil, fmt.Errorf("redis create session: %w", err)
+	}
+
+	// Установка времени жизни для сессии
+	err = r.rdb.Expire(ctx, key_session, 2*time.Hour).Err()
+	if err != nil {
+		return nil, fmt.Errorf("redis set session TTL: %w", err)
+	}
+
+	// create "user_sessions <user_id>["session_id",...]""
+	key_user := fmt.Sprintf("%s:%d", UserSessionsPrefix, s.UserID)
+	err = r.rdb.SAdd(ctx, key_user, s.ID).Err()
+	if err != nil {
+		return nil, fmt.Errorf("redis add session in user: %w", err)
 	}
 	return s, nil
 }
 
-func (r *SessionRepo) GetSession(ctx context.Context, id string, user_id int) (*entity.Session, error) {
+func (r *SessionRepo) GetSession(ctx context.Context, id string) (*entity.Session, error) {
 	res := new(entity.Session)
-	key := fmt.Sprintf("%s:%d:%s", SessionPrefix, user_id, id)
+	key := fmt.Sprintf("%s:%s", SessionPrefix, id)
+
+	ttl, err := r.rdb.TTL(ctx, key).Result()
+	if err != nil {
+		return nil, fmt.Errorf("redis get session TTL: %w", err)
+	}
+
+	if ttl <= 0 {
+		return nil, fmt.Errorf("redis get session: %w", apiError.ErrSessionExpired)
+
+	}
 
 	if err := r.rdb.HGetAll(ctx, key).Scan(res); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("redis get session: %w", err)
 	}
 
 	return res, nil
 }
 
-func (r *SessionRepo) DeleteSession(ctx context.Context, id string, user_id int) error {
-	key := fmt.Sprintf("%s:%d:%s", SessionPrefix, user_id, id)
-	return r.rdb.Del(ctx, key).Err()
+// delete "session <session_id>{"user_id": int, "user_ip": "string", "user_agent": "string"}""
+func (r *SessionRepo) DeleteSession(ctx context.Context, id string) error {
+	key := fmt.Sprintf("%s:%s", SessionPrefix, id)
+	if err := r.rdb.Del(ctx, key).Err(); err != nil {
+		return fmt.Errorf("redis delete session: %w", err)
+	}
+	return nil
 }
 
+// delete from "user_sessions <user_id>["session_id",...]""
+func (r *SessionRepo) DeleteSessionFromUser(ctx context.Context, id string, user_id int) error {
+	key := fmt.Sprintf("%s:%d", UserSessionsPrefix, user_id)
+	if err := r.rdb.SRem(ctx, key, id).Err(); err != nil {
+		return fmt.Errorf("redis delete session from user: %w", err)
+	}
+	return nil
+}
 func (r *SessionRepo) GetListSession(ctx context.Context, user_id int) ([]*entity.Session, error) {
 	sessions := []*entity.Session{}
-	pattern := fmt.Sprintf("%s:%d:*", SessionPrefix, user_id)
-	keys, err := r.rdb.Keys(ctx, pattern).Result()
+	key_user := fmt.Sprintf("%s:%d", UserSessionsPrefix, user_id)
+	sessions_id, err := r.rdb.SMembers(ctx, key_user).Result()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("redis get list sessions: %w", err)
 	}
-	for _, key := range keys {
-		session := new(entity.Session)
-		if err := r.rdb.HGetAll(ctx, key).Scan(session); err != nil {
-			return nil, err
+	for _, session_id := range sessions_id {
+		session, err := r.GetSession(ctx, session_id)
+		if errors.Is(err, apiError.ErrSessionExpired) {
+			r.DeleteSessionFromUser(ctx, session_id, user_id)
+
 		}
-		sessions = append(sessions, session)
+		if err != nil && !errors.Is(err, apiError.ErrSessionExpired) {
+			return nil, fmt.Errorf("redis get list sessions: %w", err)
+		}
+		if session != nil {
+			sessions = append(sessions, session)
+		}
 	}
 	return sessions, nil
 }
 
 func (r *SessionRepo) DeleteListSession(ctx context.Context, user_id int) error {
-	pattern := fmt.Sprintf("%s:%d:*", SessionPrefix, user_id)
-	keys, err := r.rdb.Keys(ctx, pattern).Result()
+	key_user := fmt.Sprintf("%s:%d", UserSessionsPrefix, user_id)
+	sessions_id, err := r.rdb.SMembers(ctx, key_user).Result()
 	if err != nil {
-		return err
+		return fmt.Errorf("redis delete list sessions: %w", err)
 	}
-	return r.rdb.Del(ctx, keys...).Err()
+
+	for _, session_id := range sessions_id {
+		if err := r.DeleteSession(ctx, session_id); err != nil {
+			return fmt.Errorf("redis delete list session: %w", err)
+		}
+		if err := r.DeleteSessionFromUser(ctx, session_id, user_id); err != nil {
+			return fmt.Errorf("redis delete list session: %w", err)
+		}
+	}
+	return nil
 }

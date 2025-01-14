@@ -30,18 +30,25 @@ func (sm *SessionService) CreateSession(s *entity.Session) (*entity.Session, err
 	return id, nil
 }
 
-func (sm *SessionService) GetSession(id string, user_id int) (*entity.Session, error) {
-	session, err := sm.repo.GetSession(sm.ctx, id, user_id)
+func (sm *SessionService) GetSession(id string) (*entity.Session, error) {
+	session, err := sm.repo.GetSession(sm.ctx, id)
 	if err != nil {
-		return nil, fmt.Errorf("session manager get '%s:%d': %w", id, user_id, err)
+		return nil, fmt.Errorf("session manager get '%s': %w", id, err)
 	}
 
 	return session, nil
 }
 
-func (sm *SessionService) DeleteSession(id string, user_id int) error {
-	if err := sm.repo.DeleteSession(sm.ctx, id, user_id); err != nil {
-		return fmt.Errorf("session manager delete '%s:%d': %w", id, user_id, err)
+func (sm *SessionService) DeleteSession(id string) error {
+	session, err := sm.GetSession(id)
+	if err != nil {
+		return fmt.Errorf("session manager delete '%s': %w", id, err)
+	}
+	if err := sm.repo.DeleteSession(sm.ctx, id); err != nil {
+		return fmt.Errorf("session manager delete '%s': %w", id, err)
+	}
+	if err := sm.repo.DeleteSessionFromUser(sm.ctx, id, session.UserID); err != nil {
+		return fmt.Errorf("session manager delete '%s': %w", id, err)
 	}
 	return nil
 }
@@ -58,5 +65,6 @@ func (sm *SessionService) DeleteListSession(user_id int) error {
 	if err := sm.repo.DeleteListSession(sm.ctx, user_id); err != nil {
 		return fmt.Errorf("session manager del list '%d': %w", user_id, err)
 	}
+
 	return nil
 }

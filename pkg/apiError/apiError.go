@@ -29,4 +29,8 @@ var (
 	ErrInternal          = New("internal error", http.StatusInternalServerError)
 	ErrUserAlreadyExists = New("user already exist", http.StatusBadRequest)
 	ErrUserNotExists     = New("user not exist", http.StatusBadRequest)
+	ErrWrongPassword     = New("wrong password", http.StatusBadRequest)
+	ErrNotSessionHeader  = New("absent auth header", http.StatusBadRequest)
+	ErrNotAuthService    = New("not auth service", http.StatusUnauthorized)
+	ErrSessionExpired    = New("session expired", http.StatusBadRequest)
 )

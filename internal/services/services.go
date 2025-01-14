@@ -11,10 +11,11 @@ import (
 //go:generate mockgen -source=services.go -destination=mocks/mock.go
 type UserService interface {
 	CreateUser(*entity.User) (*entity.User, error)
-	DeleteUser(*entity.User) error
-	UpdateUser(*entity.User) (*entity.User, error)
-	GetUserByEmail(*entity.User) (*entity.User, error)
-	GetUserByID(*entity.User) (*entity.User, error)
+	DeleteUser(id int) error
+	UpdateEmailUser(user *entity.User) (*entity.User, error)
+	UpdatePasswordUser(user *entity.User) (*entity.User, error)
+	GetUserByID(id int) (*entity.User, error)
+	CheckUser(*entity.User) (*entity.User, error)
 }
 
 type Services struct {

@@ -1,0 +1,459 @@
+basePath: /
+definitions:
+  models.ErrorResponse:
+    properties:
+      error:
+        type: string
+    type: object
+  models.Response:
+    properties:
+      message:
+        type: string
+    type: object
+  models.SessionCreateRequest:
+    properties:
+      user_agent:
+        type: string
+      user_id:
+        type: integer
+      user_ip:
+        type: string
+    type: object
+  models.SessionListRequest:
+    properties:
+      user_id:
+        type: integer
+    type: object
+  models.SessionRequest:
+    properties:
+      session_id:
+        type: string
+    type: object
+  models.SessionResponse:
+    properties:
+      session_id:
+        type: string
+    type: object
+  models.SessionResponseFull:
+    properties:
+      session_id:
+        type: string
+      user_agent:
+        type: string
+      user_id:
+        type: integer
+      user_ip:
+        type: string
+    type: object
+  models.UserCheckRequest:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    type: object
+  models.UserCreateRequest:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    type: object
+  models.UserIdRequest:
+    properties:
+      id:
+        type: integer
+    type: object
+  models.UserResponse:
+    properties:
+      email:
+        type: string
+      id:
+        type: integer
+    type: object
+  models.UserUpdateEmailRequest:
+    properties:
+      id:
+        type: integer
+      new_email:
+        type: string
+    type: object
+  models.UserUpdatePasswordRequest:
+    properties:
+      id:
+        type: integer
+      new_password:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: Сервис для ведения БД пользователей и контроля их сессий. Используются
+    принципы чистой архитектуры. Доступ к сервису осуществляется только через запросы
+    подписанные JWT токеном которые генерируется при запуске и сохраняется в ENV.
+  title: go-auth-service
+  version: "1.0"
+paths:
+  /check-user:
+    post:
+      consumes:
+      - application/json
+      description: Проверка пароля
+      parameters:
+      - description: Write Email and Password
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/models.UserCheckRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.UserResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - Bearer: []
+      summary: Create User
+      tags:
+      - users
+  /create-session:
+    post:
+      consumes:
+      - application/json
+      description: 'SessionID генерируется как 32 рандомных бит Добавляется в Redis:
+        1) *session <session_id>{"user_id": int, "user_ip": "string", "user_agent":
+        "string"}* 2) *user_sessions <user_id>["session_id",...]*'
+      parameters:
+      - description: Write UserID UserIP UserAgent
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/models.SessionCreateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.SessionResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - Bearer: []
+      summary: Create Session
+      tags:
+      - sessions
+  /create-user:
+    post:
+      consumes:
+      - application/json
+      description: Проверка отсутствия аккаунта с этим email. Пароль хешируется с
+        помощью `bcrypt`. *User* записывается записывается в БД
+      parameters:
+      - description: Write Email and Password
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/models.UserCreateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.UserResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - Bearer: []
+      summary: Create User
+      tags:
+      - users
+  /delete-session:
+    delete:
+      consumes:
+      - application/json
+      description: 'Удаление сессии session_id из Redis: session <session_id> если
+        у сессий совпадает user_id Удаление сессии из списка сессий юзера'
+      parameters:
+      - description: id
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/models.SessionRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - Bearer: []
+      summary: Delete Session
+      tags:
+      - sessions
+  /delete-sessions:
+    delete:
+      consumes:
+      - application/json
+      description: 'Удаление сессий по user_id из Redis: user_sessions <user_id>.'
+      parameters:
+      - description: id
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/models.SessionListRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - Bearer: []
+      summary: Delete Session
+      tags:
+      - sessions
+  /delete-user:
+    delete:
+      consumes:
+      - application/json
+      description: Удаление из БД по ID из Session
+      parameters:
+      - description: id
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/models.UserIdRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - Bearer: []
+      summary: Delete User
+      tags:
+      - users
+  /get-session/{session_id}:
+    get:
+      consumes:
+      - application/json
+      description: 'Получение из Redis: session <session_id>'
+      parameters:
+      - description: Session ID
+        in: path
+        name: session_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.SessionResponseFull'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - Bearer: []
+      summary: Get Session
+      tags:
+      - sessions
+  /get-sessions/{user_id}:
+    get:
+      consumes:
+      - application/json
+      description: 'Получение из Redis: user_sessions <user_id>'
+      parameters:
+      - description: User ID
+        in: path
+        name: user_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.SessionResponseFull'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - Bearer: []
+      summary: Get List Sessions
+      tags:
+      - sessions
+  /get-user-by-id/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Получение user из БД
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.UserResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - Bearer: []
+      summary: Get User By ID
+      tags:
+      - users
+  /update-email:
+    put:
+      consumes:
+      - application/json
+      description: Проверка не занят ли новый email. Обновление полей в БД по ID из
+        Session
+      parameters:
+      - description: id and new email
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/models.UserUpdateEmailRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.UserResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - Bearer: []
+      summary: Update Email
+      tags:
+      - users
+  /update-password:
+    put:
+      consumes:
+      - application/json
+      description: Хеширование нового пароля с помощью bcrypt. Обновление полей в
+        БД по ID из Session
+      parameters:
+      - description: id and new password
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/models.UserUpdatePasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.UserResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - Bearer: []
+      summary: Update Password
+      tags:
+      - users
+securityDefinitions:
+  Bearer:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

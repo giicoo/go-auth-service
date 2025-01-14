@@ -16,10 +16,14 @@ import (
 	"github.com/giicoo/go-auth-service/internal/services"
 	"github.com/giicoo/go-auth-service/pkg/beauti_json_formatter"
 	_ "github.com/mattn/go-sqlite3"
+	"github.com/rs/cors"
 	"github.com/sirupsen/logrus"
 )
 
 func RunApp() {
+	// init jwt
+	//jwt.GenerateServiceToken() // debug
+
 	// init logger
 	formatter := beauti_json_formatter.NewFormatter(true)
 	logrus.SetFormatter(formatter)
@@ -55,8 +59,9 @@ func RunApp() {
 
 	// Create router
 	r := handler.NewRouter()
+	h := cors.Default().Handler(r)
 	// Start Server
-	srv := server.NewServer(r)
+	srv := server.NewServer(h)
 
 	go func() {
 
