@@ -9,7 +9,8 @@
 # Запуск
 Скачать репозиторий:
 ```
-git clone github.com/giicoo/go-auth-service
+git clone https://github.com/giicoo/go-auth-service
+cd go-auth-service
 ```
 
 Собрать образ докера:
